@@ -20,6 +20,8 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         "Что делает?",
         "Где?",
         "С кем?",
+        "Когда?",
+        "Для чего?",
         "Чем дело закончилось?"
     )
 
@@ -27,7 +29,11 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        sentence.clearSentence()
+        if (savedInstanceState != null) {
+            questionNumber = savedInstanceState.getInt("questionNumber")
+        } else {
+            sentence.clearSentence()
+        }
 
         addFragmentWithText()
     }
@@ -54,5 +60,10 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putInt("questionNumber", questionNumber)
+    }
 
 }
