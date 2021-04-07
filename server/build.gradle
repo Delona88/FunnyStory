@@ -1,0 +1,25 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+version 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+//TODO solve problem in Runner
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.1.16.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat:2.1.16.RELEASE'
+
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+}

@@ -5,26 +5,40 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.ShowSentenceActivity">
+        tools:context=".activities.StartNewGameOrConnectActivity">
     <LinearLayout
             android:id="@+id/mainLinearLayoutConnectToGame"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
+
         <TextView
                 android:id="@+id/textView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="14pt"
                 android:textColor="@color/colorPrimary"
-                android:text=""/>
+                android:text="Введите id или создаейте новую игру"/>
+        <EditText
+                android:id="@+id/editText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14pt"
+                tools:ignore="MissingConstraints"/>
 
         <Button
-                android:id="@+id/buttonNew"
+                android:id="@+id/buttonConnect"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:theme="@style/AppTheme.Button"
-                android:text="Заново"/>
+                android:text="Присоединиться к игре"/>
+
+        <Button
+                android:id="@+id/buttonNewGame"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/AppTheme.Button"
+                android:text="Создать новую игру"/>
     </LinearLayout>
 
     <FrameLayout
@@ -41,5 +55,4 @@
                 android:layout_gravity="center"
                 android:visibility="invisible"/>
     </FrameLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

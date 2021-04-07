@@ -4,7 +4,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".OneWordFragment">
+        tools:context=".activities.createsentence.OneWordFragment">
     <LinearLayout
             android:id="@+id/mainLinearLayoutConnectToGame"
             android:layout_width="match_parent"
@@ -22,7 +22,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="14pt"
-                tools:ignore="MissingConstraints"/>
+                tools:ignore="MissingConstraints"
+                android:focusable="true"/>
         <Button
                 android:id="@+id/buttonEnter"
                 android:layout_width="match_parent"

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5pt">
+    <LinearLayout
+            android:id="@+id/mainLinearLayoutAllGames"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#DEDDFF"
+            android:orientation="horizontal"
+            tools:layout_editor_absoluteX="12dp">
+
+        <TextView
+                android:id="@+id/textViewGame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="игрок "
+
+                android:textSize="14pt"/>
+        <TextView
+                android:id="@+id/textViewId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="14pt"/>
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

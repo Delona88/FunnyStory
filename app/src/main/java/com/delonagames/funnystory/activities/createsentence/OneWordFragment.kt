@@ -1,24 +1,28 @@
-package com.delonagames.funnystory
+package com.delonagames.funnystory.activities.createsentence
 
 import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OnClickListener
 import android.view.ViewGroup
+import android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.getSystemService
+import androidx.fragment.app.DialogFragment
+import com.delonagames.funnystory.R
 
 class OneWordFragment : Fragment() {
     private lateinit var textView: TextView
-
     private lateinit var editText: EditText
-
     private lateinit var buttonEnter: Button
 
-    private lateinit var mainActivity: MainActivityInterface
+    private lateinit var createSentenceActivity: CreateSentenceActivityInterface
 
     companion object {
         fun newInstance(text: String): OneWordFragment {
@@ -42,23 +46,23 @@ class OneWordFragment : Fragment() {
         textView.text = arguments?.getString("text")
 
         editText = rootView.findViewById(R.id.editText)
+        /*editText.requestFocus()
+        val imm: InputMethodManager = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)*/
 
         buttonEnter = rootView.findViewById(R.id.buttonEnter)
-        buttonEnter.setOnClickListener(onClickListener)
+        buttonEnter.setOnClickListener {
+            createSentenceActivity.goNext(getWord() + " ")
+        }
 
         return rootView
     }
 
-    private val onClickListener = OnClickListener {
-        when (it.id) {
-            buttonEnter.id -> mainActivity.goNext(getWord() + " ")
-        }
-    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
 
-        mainActivity = context as MainActivityInterface
+        createSentenceActivity = context as CreateSentenceActivityInterface
     }
 
     private fun getWord(): String {

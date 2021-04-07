@@ -5,26 +5,46 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.ShowSentenceActivity">
+        tools:context=".activities.host.HostActivity">
+
     <LinearLayout
-            android:id="@+id/mainLinearLayoutConnectToGame"
+            android:id="@+id/mainLinearLayoutHostActivity"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
+
         <TextView
                 android:id="@+id/textView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="14pt"
                 android:textColor="@color/colorPrimary"
-                android:text=""/>
-
+                android:text="Игра "/>
+        <TextView
+                android:id="@+id/textViewGameId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14pt"
+                android:textColor="@color/colorPrimary"
+                android:text=" "/>
         <Button
-                android:id="@+id/buttonNew"
+                android:id="@+id/buttonUpdate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:theme="@style/AppTheme.Button"
-                android:text="Заново"/>
+                android:text="Обновить"/>
+
+        <Button
+                android:id="@+id/buttonStart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/AppTheme.Button"
+                android:text="Начать"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
     </LinearLayout>
 
     <FrameLayout

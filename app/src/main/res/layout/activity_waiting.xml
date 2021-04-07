@@ -5,7 +5,8 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.ShowSentenceActivity">
+        tools:context=".activities.WaitingActivity">
+
     <LinearLayout
             android:id="@+id/mainLinearLayoutConnectToGame"
             android:layout_width="match_parent"
@@ -17,14 +18,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="14pt"
                 android:textColor="@color/colorPrimary"
-                android:text=""/>
-
-        <Button
-                android:id="@+id/buttonNew"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:theme="@style/AppTheme.Button"
-                android:text="Заново"/>
+                android:text="Дождитесь пока Хост начнет игру"/>
     </LinearLayout>
 
     <FrameLayout
