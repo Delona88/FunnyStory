@@ -1,6 +1,7 @@
 package com.delonagames.funnystory.activities
 
 import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -8,19 +9,19 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.delonagames.funnystory.FunnyStoryApp
 import com.delonagames.funnystory.R
-import com.delonagames.funnystory.model.Sentence
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity.Sentence.sentence
 import com.delonagames.funnystory.activities.host.HostActivity
+import com.delonagames.funnystory.activities.host.ListUsersAdapter
 import com.delonagames.funnystory.clientapi.NetworkService
 import kotlinx.coroutines.*
 import java.net.ConnectException
 
-class ShowSentenceActivity : AppCompatActivity() {
-
+class ShowSentenceHostActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var textViewWord1: TextView
     private lateinit var textViewWord2: TextView
@@ -30,8 +31,9 @@ class ShowSentenceActivity : AppCompatActivity() {
     private lateinit var textViewWord6: TextView
     private lateinit var textViewWord7: TextView
     private lateinit var textViewWord8: TextView
-
+    private lateinit var textViewUsers: TextView
     private lateinit var buttonNewGame: Button
+    private lateinit var recyclerView: RecyclerView
 
     private var networkVersion = false
     private var gameId = 0
@@ -51,14 +53,12 @@ class ShowSentenceActivity : AppCompatActivity() {
         finish()
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_show_sentence)
+        setContentView(R.layout.activity_show_sentence_host)
 
         initData()
         buildGUI()
-
     }
 
     private fun initData() {
@@ -81,14 +81,19 @@ class ShowSentenceActivity : AppCompatActivity() {
 
         textViewWord1.text = "Дождитесь пока все игроки отправят свои истории"
 
+        textViewUsers = findViewById(R.id.textViewUsers)
+
         progressBar = findViewById(R.id.progressBar)
+
+        recyclerView = findViewById(R.id.recycler_view)
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
         buttonNewGame = findViewById(R.id.buttonNew)
         buttonNewGame.visibility = View.INVISIBLE
-
         buttonNewGame.setOnClickListener {
-            goStart()
+            startNewGame()
         }
+
     }
 
     override fun onStart() {
@@ -110,6 +115,7 @@ class ShowSentenceActivity : AppCompatActivity() {
         }
     }
 
+
     private suspend fun sendSentenceGetAndShowNewSentense() {
         withContext(Dispatchers.IO) {
             val response = client.sendSentence(gameId, userId, sentence.toListOfStrings())
@@ -117,7 +123,7 @@ class ShowSentenceActivity : AppCompatActivity() {
                 waitGameOverGetSentenceAndShow()
             } else {
                 withContext(Dispatchers.Main) {
-                    showToast("Кажется Вас удалили из игры. Попробуйте присоединиться еще раз")
+                    showToast("Неверный запрос $response")
                     textViewWord1.text = "Ваше предложение: \n ${sentence.getStringSentence()}"
                 }
             }
@@ -128,6 +134,7 @@ class ShowSentenceActivity : AppCompatActivity() {
         withContext(Dispatchers.Default) {
             var isGameOver = false
             while (!isGameOver) {
+                getListUserNotSendSentenceAndUpdateListOrShowToast()
                 Log.d("checkGameOver", ".........checkGameOver")
                 val response = client.isGameOver(gameId)
                 if (response.isSuccessful && response.body() != null) {
@@ -141,23 +148,78 @@ class ShowSentenceActivity : AppCompatActivity() {
                 }
                 delay(500)
             }
-            if (isGameOver) getSentenceAndShow()
+            if (isGameOver) {
+                getSentenceAndShow()
+                withContext(Dispatchers.Main) {
+                    hideRecyclerView()
+                    hideTextUsers()
+                }
+            }
         }
     }
 
+    private suspend fun getListUserNotSendSentenceAndUpdateListOrShowToast() {
+        withContext(Dispatchers.IO) {
+            val response = client.getInfoIsUserSentSentence(gameId)
+            if (response.isSuccessful && response.body() != null) {
+                val usersNotSentSentence = response.body()!!
+                val listUsers = mutableListOf<Int>()
+                for (id in usersNotSentSentence.keys)
+                    if (usersNotSentSentence[id] == false) {
+                        listUsers.add(id)
+                    }
+                updateRecyclerView(listUsers)
+            } else {
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                    textViewWord1.text = "Ваше предложение: \n ${sentence.getStringSentence()}"
+                }
+            }
+        }
+    }
+
+    private suspend fun updateRecyclerView(listUsers: List<Int>) {
+        withContext(Dispatchers.Main) {
+            val adapter = ListUsersAdapter(listUsers, object : ListUsersAdapter.ButtonClickListener {
+                override fun onButtonRemoveClick(id: Int) {
+                    if (id != userId) {
+                        deleteUser(id)
+                    } else {
+                        showToast("Нельзя удалить себя")
+                    }
+                }
+            })
+            recyclerView.adapter = adapter
+        }
+    }
+
+    private fun deleteUser(userId: Int) {
+        coroutineScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            val response = client.disconnectUserIfSentenceNotSent(gameId, userId)
+            if (response.isSuccessful) {
+                getListUserNotSendSentenceAndUpdateListOrShowToast()
+            } else {
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                }
+            }
+        }
+    }
+
+
     private suspend fun getSentenceAndShow() {
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             val response = client.getSentenceIfGameOver(gameId, userId)
             if (response.isSuccessful && response.body() != null) {
-                val sentence = response.body()!!.toMutableList()
+                val sentence = response.body()!!
                 withContext(Dispatchers.Main) {
                     showSentence(sentence)
                     showButtonNewGame()
                 }
             } else {
                 withContext(Dispatchers.Main) {
-                    showToast("Кажется Вас удалили из игры")
-                    textViewWord1.text = "Ваше предложение: \n ${sentence.getStringSentence()}"
+                    showToast("Неверный запрос $response")
+                    textViewWord1.text = "Ваше предложение: \n $sentence"
                 }
             }
         }
@@ -174,20 +236,27 @@ class ShowSentenceActivity : AppCompatActivity() {
         textViewWord8.text = sentence[7].toUpperCase()
     }
 
-    private fun goStart() {
+    private fun startNewGame() {
         val intent: Intent =
-            if (!networkVersion) {
-                Intent(this, CreateSentenceActivity::class.java)
+            if (host) {
+                Intent(this, HostActivity::class.java)
             } else {
-                if (host) {
-                    Intent(this, HostActivity::class.java)
-                } else {
+                if (networkVersion) {
                     Intent(this, WaitingActivity::class.java)
+                } else {
+                    Intent(this, CreateSentenceActivity::class.java)
                 }
             }
-
         startActivity(intent)
         finish()
+    }
+
+    private fun hideRecyclerView() {
+        recyclerView.visibility = View.INVISIBLE
+    }
+
+    private fun hideTextUsers() {
+        textViewUsers.visibility = View.INVISIBLE
     }
 
     private fun showButtonNewGame() {
@@ -212,6 +281,6 @@ class ShowSentenceActivity : AppCompatActivity() {
         coroutineScope.coroutineContext.cancelChildren()
     }
 
-}
 
+}
 

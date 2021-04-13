@@ -1,5 +1,7 @@
 package com.delonagames.funnystory.model
 
+import java.util.*
+
 class Sentence {
     private var words: MutableList<String> = mutableListOf()
     private val questions = mutableListOf(
@@ -28,7 +30,7 @@ class Sentence {
     }
 
     fun getStringSentence(): String {
-        return words.reduce { str, element -> str + element }
+        return words.reduce { str, element -> str + element } .toUpperCase()
     }
 
     fun getQuestion(index: Int): String {

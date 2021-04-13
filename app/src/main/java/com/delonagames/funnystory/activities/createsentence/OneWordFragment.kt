@@ -69,5 +69,4 @@ class OneWordFragment : Fragment() {
         return editText.text.toString()
     }
 
-
 }

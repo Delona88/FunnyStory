@@ -9,12 +9,13 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 
 class FunnyStoryApp : Application() {
-    private val baseUrl = "http://192.168.1.52:8080/"
+    private val baseUrl = "http://192.168.1.52:8080/" // http://192.168.1.52:8080/ https://funnystory.herokuapp.com:443/
     val client: RetrofitInterfaceApi
     var gameId: Int = 0
     var userId: Int = 0
     var networkVersion = false
-    var host = false
+    var isHost = false
+    var gameWasStarted = false
 
     init {
         val retrofit = Retrofit.Builder()

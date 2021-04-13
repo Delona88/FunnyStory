@@ -7,19 +7,18 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.delonagames.funnystory.*
 import com.delonagames.funnystory.activities.ShowSentenceActivity
+import com.delonagames.funnystory.activities.ShowSentenceHostActivity
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity.Sentence.sentence
 import com.delonagames.funnystory.model.Sentence
-import kotlinx.coroutines.cancelChildren
 
 class CreateSentenceActivity : AppCompatActivity(),
     CreateSentenceActivityInterface {
-
-    private lateinit var currentFragment: Fragment
 
     object Sentence {
         val sentence = Sentence()
     }
 
+    private lateinit var currentFragment: Fragment
     private var questionNumber = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +30,7 @@ class CreateSentenceActivity : AppCompatActivity(),
         } else {
             sentence.clearSentence()
         }
+
         addFragmentWithText()
     }
 
@@ -47,7 +47,6 @@ class CreateSentenceActivity : AppCompatActivity(),
     }
 
     override fun goNext(word: String) {
-
         sentence.addWord(word)
         questionNumber++
         if (questionNumber < sentence.getNumberOfQuestions()) {
@@ -58,17 +57,21 @@ class CreateSentenceActivity : AppCompatActivity(),
         }
     }
 
+    private fun goToShowSentenceActivity() {
+        val funnyStoryApp = applicationContext as FunnyStoryApp
+        intent = if (funnyStoryApp.networkVersion && funnyStoryApp.isHost) {
+            Intent(this, ShowSentenceHostActivity::class.java)
+        } else {
+            Intent(this, ShowSentenceActivity::class.java)
+        }
+        startActivity(intent)
+        finish()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
         outState.putInt("questionNumber", questionNumber)
     }
-
-    private fun goToShowSentenceActivity() {
-        intent = Intent(this, ShowSentenceActivity::class.java)
-        startActivity(intent)
-        finish()
-    }
-
 
 }

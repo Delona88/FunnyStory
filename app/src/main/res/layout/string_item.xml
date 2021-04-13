@@ -21,11 +21,17 @@
 
                 android:textSize="14pt"/>
         <TextView
-                android:id="@+id/textViewId"
+                android:id="@+id/textViewUserId"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""
                 android:textSize="14pt"/>
+        <Button
+                android:id="@+id/buttonRemove"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:theme="@style/AppTheme.Button"
+                android:text="X"/>
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

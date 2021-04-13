@@ -2,4 +2,13 @@
     <string name="app_name">Funny Story</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="local_version">Если нет возможности подключиться к сети, выберите локальную версию и передавайте
+        телефон по кругу.
+    </string>
+
+    <string name="network_version">Выберите сетевую версию и играйте каждый на своем телефоне. Вам не придется
+        перетруждать себя и передавать телефон по кругу.
+        Мой прекрасный сервер сделает все за вас.
+    </string>
+    <string name="game_id_info">Сообщите друзьям номер игры, чтобы они могли присоединиться к игре и играть с Вами.</string>
 </resources>

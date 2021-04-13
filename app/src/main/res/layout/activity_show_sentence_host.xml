@@ -5,19 +5,20 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.ShowSentenceActivity">
+        tools:context=".activities.ShowSentenceHostActivity">
+
     <LinearLayout
-            android:id="@+id/mainLinearLayoutConnectToGame"
+            android:id="@+id/mainLinearLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
+
         <ScrollView
                 android:id="@+id/scroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:scrollbars="none">
             <LinearLayout
-                    android:id="@+id/mainLinearLayout"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical">
@@ -26,35 +27,35 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#01041B"
+                        android:textColor="#000423"
                         android:text=""/>
                 <TextView
                         android:id="@+id/textView2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#19013E"
+                        android:textColor="#1C0047"
                         android:text=""/>
                 <TextView
                         android:id="@+id/textView3"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#290161"
+                        android:textColor="#2B0068"
                         android:text=""/>
                 <TextView
                         android:id="@+id/textView4"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#350180"
+                        android:textColor="#380088"
                         android:text=""/>
                 <TextView
                         android:id="@+id/textView5"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#4801AC"
+                        android:textColor="#4C00B6"
                         android:text=""/>
                 <TextView
                         android:id="@+id/textView6"
@@ -75,9 +76,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="12pt"
-                        android:textColor="#6602F6"
+                        android:textColor="#6901FF"
                         android:text=""/>
-
 
                 <Button
                         android:id="@+id/buttonNew"
@@ -86,9 +86,24 @@
                         android:theme="@style/AppTheme.Button"
                         android:text="Заново"/>
 
+
+                <TextView
+                        android:id="@+id/textViewUsers"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="12pt"
+                        android:textColor="@color/colorPrimary"
+                        android:text="Игроки, которые еще не отправили свою историю: "/>
             </LinearLayout>
         </ScrollView>
+
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
     </LinearLayout>
+
 
     <FrameLayout
             android:layout_width="match_parent"

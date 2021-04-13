@@ -13,13 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.delonagames.funnystory.FunnyStoryApp
 import com.delonagames.funnystory.R
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity
-import com.delonagames.funnystory.clientapi.RetrofitInterfaceApi
+import com.delonagames.funnystory.clientapi.NetworkService
 import kotlinx.coroutines.*
 import java.net.ConnectException
 
 class HostActivity : AppCompatActivity() {
-
-    private var coroutineScope = CoroutineScope(Dispatchers.Main.immediate)
 
     private lateinit var buttonStart: Button
     private lateinit var buttonUpdate: Button
@@ -27,83 +25,122 @@ class HostActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
 
-    private lateinit var client: RetrofitInterfaceApi
-
     private lateinit var funnyStoryApp: FunnyStoryApp
+    private var gameId = 0
+    private var userId = 0
+
+    private val client = NetworkService.retrofitService
+    private val coroutineScope = CoroutineScope(Dispatchers.Main.immediate)
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+        val msg = when (exception) {
+            is ConnectException -> "Проблемы с сервером. "
+            else -> "Что-то пошло не так."
+        }
+        exception.printStackTrace()
+        showToast("$msg $exception")
+        coroutineScope.coroutineContext.cancelChildren()
+        finish()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_host)
 
-        funnyStoryApp = applicationContext as FunnyStoryApp
-        client = funnyStoryApp.client
+        initData()
+        buildGUI()
+    }
 
+    private fun initData() {
+        funnyStoryApp = applicationContext as FunnyStoryApp
+        gameId = funnyStoryApp.gameId
+        userId = funnyStoryApp.userId
+    }
+
+    private fun buildGUI() {
         textViewGameId = findViewById(R.id.textViewGameId)
         textViewGameId.text = funnyStoryApp.gameId.toString()
 
-        recyclerView = findViewById(R.id.recycler_view)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
         progressBar = findViewById(R.id.progressBar)
 
-        val coroutineExceptionHandler = CoroutineExceptionHandler { _, t ->
-            val msg = when (t) {
-                is ConnectException -> "Проблемы с сервером. "
-                else -> "Что-то пошло не так."
-            }
-            t.printStackTrace()
-            showToast("$msg $t")
-            coroutineScope.coroutineContext.cancelChildren()
-            finish()
-        }
+        recyclerView = findViewById(R.id.recycler_view)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        getUsersIdAndUpdateRecyclerView()
 
         buttonStart = findViewById(R.id.buttonStart)
         buttonStart.setOnClickListener {
             coroutineScope.launch(coroutineExceptionHandler) {
                 showProgressBar()
-                setGameActive()
+                setGameActiveTrueAndStartCreateSentenceActivity()
                 hideProgressBar()
-                goToCreateSentenceActivity()
             }
         }
 
         buttonUpdate = findViewById(R.id.buttonUpdate)
         buttonUpdate.setOnClickListener {
-            coroutineScope.launch(coroutineExceptionHandler) {
-                showProgressBar()
-                getAllUsersByGameIdAndUpdateList()
-                hideProgressBar()
-            }
+            getUsersIdAndUpdateRecyclerView()
         }
 
+    }
+
+    private fun getUsersIdAndUpdateRecyclerView() {
         coroutineScope.launch(coroutineExceptionHandler) {
             showProgressBar()
-            getAllUsersByGameIdAndUpdateList()
+            getAllUsersIdAndUpdateListOrShowToast()
             hideProgressBar()
         }
     }
 
-    private suspend fun setGameActive() {
+    private suspend fun getAllUsersIdAndUpdateListOrShowToast() {
         withContext(Dispatchers.IO) {
-            client.setGameActive(funnyStoryApp.gameId, true)
-        }
-    }
-
-    private suspend fun getAllUsersByGameIdAndUpdateList() {
-        withContext(Dispatchers.IO) {
-            val response = client.getAllUsersByGameId(funnyStoryApp.gameId)
+            val response = client.getAllUsersByGameId(gameId)
             if (response.isSuccessful && response.body() != null) {
-                updateList(response.body()!!)
+                updateRecyclerView(response.body()!!)
             } else {
-                showToastServerProblem()
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                }
             }
         }
     }
 
-    private suspend fun updateList(listUsers: List<Int>) {
+    private suspend fun updateRecyclerView(listUsersId: List<Int>) {
         withContext(Dispatchers.Main) {
-            val adapter = ListUsersAdapter(listUsers)
+            val adapter = ListUsersAdapter(listUsersId, object : ListUsersAdapter.ButtonClickListener {
+                override fun onButtonRemoveClick(id: Int) {
+                    if (id != userId) {
+                        deleteUser(id)
+                    } else {
+                        showToast("Невозможно удалить себя")
+                    }
+                }
+            })
             recyclerView.adapter = adapter
+        }
+    }
+
+    private fun deleteUser(userId: Int) {
+        coroutineScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            val response = client.disconnectUser(gameId, userId)
+            if (response.isSuccessful) {
+                getAllUsersIdAndUpdateListOrShowToast()
+            } else {
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                }
+            }
+        }
+    }
+
+    private suspend fun setGameActiveTrueAndStartCreateSentenceActivity() {
+        withContext(Dispatchers.IO) {
+            val response = client.setGameActiveTrue(gameId)
+            if (response.isSuccessful) {
+                goToCreateSentenceActivity()
+            } else {
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                }
+            }
         }
     }
 
@@ -119,10 +156,6 @@ class HostActivity : AppCompatActivity() {
 
     private fun hideProgressBar() {
         progressBar.visibility = View.INVISIBLE
-    }
-
-    private fun showToastServerProblem() {
-        Toast.makeText(this, "Проблемы с сервером. Попробуйте позже", Toast.LENGTH_LONG).show()
     }
 
     private fun showToast(str: String) {

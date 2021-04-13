@@ -2,59 +2,69 @@ package com.delonagames.funnystory.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.delonagames.funnystory.FunnyStoryApp
 import com.delonagames.funnystory.R
 import com.delonagames.funnystory.activities.host.HostActivity
-import com.delonagames.funnystory.clientapi.RetrofitInterfaceApi
+import com.delonagames.funnystory.clientapi.NetworkService
 import kotlinx.coroutines.*
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
 class StartNewGameOrConnectActivity : AppCompatActivity() {
 
-    private var coroutineScope = CoroutineScope(Dispatchers.Main.immediate)
-
     private lateinit var editText: EditText
     private lateinit var progressBar: ProgressBar
+    private lateinit var buttonConnectLastGame: Button
 
     private lateinit var funnyStoryApp: FunnyStoryApp
-
-    private lateinit var client: RetrofitInterfaceApi
-
     private var gameId = 0
+    private var userId = 0
+
+    private val client = NetworkService.retrofitService
+    private val coroutineScope = CoroutineScope(Dispatchers.Main.immediate)
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+        val msg = when (exception) {
+            is ConnectException -> "Сервер не запущен. "
+            is SocketTimeoutException -> "Сервер не отвечает. "
+            else -> "Что-то пошло не так. "
+        }
+        exception.printStackTrace()
+        showToast("$msg $exception")
+        coroutineScope.coroutineContext.cancelChildren()
+        hideProgressBar()
+        //finish()
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_start_new_game_or_connect)
 
+        initData()
+        buildGUI()
+    }
+
+    private fun initData(){
+        funnyStoryApp = applicationContext as FunnyStoryApp
+        userId = funnyStoryApp.userId
+    }
+
+    private fun buildGUI(){
+
         editText = findViewById(R.id.editText)
+
         progressBar = findViewById(R.id.progressBar)
 
-        funnyStoryApp = applicationContext as FunnyStoryApp
-        client = funnyStoryApp.client
-
-        val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
-            val msg = when (exception) {
-                is ConnectException -> "Сервер не запущен. "
-                is SocketTimeoutException -> "Сервер не отвечает. "
-                else -> "Что-то пошло не так. "
-            }
-            exception.printStackTrace()
-            showToast("$msg $exception")
-            coroutineScope.coroutineContext.cancelChildren()
-            finish()
-        }
+        val textView: TextView = findViewById(R.id.textViewUserId)
+        textView.text = java.lang.String.format("Ваш ID для сетевых игры: %s", userId.toString())
 
         val buttonConnect: Button = findViewById(R.id.buttonConnect)
         buttonConnect.setOnClickListener {
-            funnyStoryApp.host = false
+            funnyStoryApp.isHost = false
+            funnyStoryApp.gameWasStarted = true
             coroutineScope.launch(coroutineExceptionHandler) {
                 showProgressBar()
                 checkInfoAndConnectToGame()
@@ -62,13 +72,35 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
             }
         }
 
+        buttonConnectLastGame = findViewById(R.id.buttonConnectLast)
+        buttonConnectLastGame.setOnClickListener {
+            if (funnyStoryApp.isHost) {
+                goToHostActivity()
+            } else {
+                goToWaitingActivity()
+            }
+        }
+
         val buttonNew: Button = findViewById(R.id.buttonNewGame)
         buttonNew.setOnClickListener {
-            funnyStoryApp.host = true
+            funnyStoryApp.gameWasStarted = true
+            funnyStoryApp.isHost = true
             coroutineScope.launch(coroutineExceptionHandler) {
                 showProgressBar()
                 startNewGame()
                 hideProgressBar()
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        buttonConnectLastGame.apply {
+            visibility = if (funnyStoryApp.gameWasStarted) {
+                View.VISIBLE
+            } else {
+                View.INVISIBLE
             }
         }
     }
@@ -94,14 +126,11 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
         return false
     }
 
-
-
     private suspend fun connectToGame() {
         withContext(Dispatchers.IO) {
-            val response = client.connectToGameAndGetUserId(gameId)
-            if (response.isSuccessful && response.body() != null) {
+            val response = client.connectUserToGame(gameId, userId)
+            if (response.isSuccessful) {
                 funnyStoryApp.gameId = gameId
-                funnyStoryApp.userId = response.body()!!
                 goToWaitingActivity()
             } else {
                 val BAD_REQUEST = 400
@@ -111,39 +140,40 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
                     }
                 } else {
                     withContext(Dispatchers.Main) {
-                        showToastServerProblem()
+                        showToast("Неверный запрос $response")
                     }
                 }
             }
         }
     }
 
+    private fun goToWaitingActivity() {
+        intent = Intent(this, WaitingActivity::class.java)
+        startActivity(intent)
+    }
+
     private suspend fun startNewGame() {
         withContext(Dispatchers.IO) {
-            getNewGameId()
-            goToStartNewGameActivity()
+            getNewGameIdAndStartHostActivity()
         }
     }
 
-    private suspend fun getNewGameId() {
+    private suspend fun getNewGameIdAndStartHostActivity() {
         withContext(Dispatchers.IO) {
-            val response = client.getGameId()
+            val response = client.createNewGameAddHostAndGetGameId(userId)
             if (response.isSuccessful && response.body() != null) {
                 funnyStoryApp.gameId = response.body()!!
-                funnyStoryApp.userId = 0
+                goToHostActivity()
             } else {
-                showToastServerProblem()
+                withContext(Dispatchers.Main) {
+                    showToast("Неверный запрос $response")
+                }
             }
         }
     }
 
-    private fun goToStartNewGameActivity() {
+    private fun goToHostActivity() {
         intent = Intent(this, HostActivity::class.java)
-        startActivity(intent)
-    }
-
-    private fun goToWaitingActivity() {
-        intent = Intent(this, WaitingActivity::class.java)
         startActivity(intent)
     }
 
@@ -164,18 +194,12 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
         Toast.makeText(this, str, Toast.LENGTH_LONG).show()
     }
 
-    private fun showToastServerProblem() {
-            Toast.makeText(this, "Проблемы с сервером. Попробуйте позже", Toast.LENGTH_LONG).show()
-    }
-
     private fun showProgressBar() {
-        Log.d("showProgressBar", "showProgressBar")
         progressBar.visibility = View.VISIBLE
     }
 
     private fun hideProgressBar() {
         progressBar.visibility = View.INVISIBLE
-        Log.d("hideProgressBar", "hideProgressBar")
     }
 
     override fun onDestroy() {
@@ -183,6 +207,5 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
 
         coroutineScope.coroutineContext.cancelChildren()
     }
-
 
 }

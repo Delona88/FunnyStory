@@ -2,8 +2,10 @@ package funnystoryserver.model
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.ArrayList
 
-class Game {
+class Game(val hostId: Int) {
+    private var usersId = ArrayList<Int>()
     private var userSentences = ConcurrentHashMap<Int, MutableList<String>>()
     private var newUserSentences = ConcurrentHashMap<Int, MutableList<String>>()
     private var isUserSentSentence = ConcurrentHashMap<Int, Boolean>()
@@ -11,72 +13,113 @@ class Game {
     private var sentSentenceCounter = AtomicInteger()
 
     init {
-        userSentences[0] = mutableListOf()
-        isUserSentSentence[0] = false
-        println("хост индекс - ${userSentences.size - 1}")
+        usersId.add(hostId)
+        println("добавлен host $hostId")
     }
 
-    @Synchronized fun getNewUserId(): Int {
-        val newIndex = userSentences.size
-        userSentences[newIndex] = mutableListOf()
-        isUserSentSentence[newIndex] = false
-        println("новый user индекс - $newIndex")
-        return newIndex
+    @Synchronized
+    fun addNewUserInGame(userId: Int) {
+        if (!usersId.contains(userId)) {
+            usersId.add(userId)
+        }
+        println("добавлен user $userId")
     }
 
-    fun getIdAllUsers() = userSentences.keys
+    fun getIdAllUsers() = usersId
 
     fun setGameActiveTrue() {
         this.active = true
         startNewGame()
+        println("usersId $usersId")
     }
 
     fun isGameActive() = active
 
     fun setSentenceByUserId(userId: Int, sentence: MutableList<String>) {
-        if (!isUserSentSentence[userId]!!){
+        if (userSentences[userId] == null) {
             sentSentenceCounter.incrementAndGet()
             userSentences[userId] = sentence
-            isUserSentSentence[userId] = true
         }
 
-        if (sentSentenceCounter.get() == userSentences.size) {
-            mixSentence()
-            active = false
+        if (sentSentenceCounter.get() == usersId.size) {
+            endGame()
         }
+    }
+
+    fun isUserInGame(userId: Int) = usersId.contains(userId)
+
+    private fun endGame() {
+        println("endGame : usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
+        mixSentence()
+        active = false
+
     }
 
     private fun mixSentence() {
 
-        val numberOfUser = userSentences.size
-        val numberOfWord = userSentences[0]!!.size
+        val numberOfUser = usersId.size
+        val numberOfWord = userSentences[hostId]!!.size
 
         for (sentenceNumber in 0 until numberOfUser) {
             val sentence = mutableListOf<String>()
+
             for (wordNumber in 0 until numberOfWord) {
                 val newSentenceNumber = (sentenceNumber + wordNumber) % numberOfUser
-                val newSentence = userSentences[newSentenceNumber]!!
+                val newSentence = userSentences[usersId.get(newSentenceNumber)]!!
                 val newWord = newSentence[wordNumber]
 
                 sentence.add(newWord)
             }
-            newUserSentences[sentenceNumber] = sentence
+            newUserSentences.set(usersId.get(sentenceNumber), sentence)
         }
+
     }
 
     private fun startNewGame() {
         sentSentenceCounter.set(0)
-        for (user in isUserSentSentence.keys){
-            isUserSentSentence[user] = false
+        userSentences = ConcurrentHashMap()
+    }
+
+    fun getNewSentenceByUserId(userId: Int): List<String>? = newUserSentences[userId] //?: mutableListOf()
+
+    //завершение игры хостом не дожидаясь отправки
+    fun endGameNow() {
+        usersId = ArrayList(userSentences.keys)
+        endGame()
+    }
+
+    fun getInfoIsUserSentSentence(): ConcurrentHashMap<Int, Boolean> {
+        val isUserSentSentenceHM = ConcurrentHashMap<Int, Boolean>()
+        for (userId in usersId) {
+            if (userSentences[userId] != null) {
+                isUserSentSentenceHM.put(userId, true)
+            } else {
+                isUserSentSentenceHM.put(userId, false)
+            }
+        }
+        return isUserSentSentenceHM
+    }
+
+    fun removeUserIfSentenceNotSent(userId: Int) {
+        if (userSentences[userId] == null) {
+            usersId.remove(userId)
+            println("удален user $userId")
+            println("removeUserIfSentenceNotSent уделен usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
+        }
+
+        if (sentSentenceCounter.get() == usersId.size) {
+            endGame()
+            println("removeUserIfSentenceNotSent : usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
         }
     }
 
-    fun getNewSentenceByUserId(userId: Int): List<String> = newUserSentences[userId] ?: mutableListOf()
-
-    //TODO removeUser not implemented in app
     fun removeUser(userId: Int) {
-        userSentences.remove(userId)
+        usersId.remove(userId)
+        println("удален user $userId")
+        println("removeUser уделен usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
+
     }
+
 
     override fun toString(): String {
         return "Game(usersSentence=$userSentences)"
