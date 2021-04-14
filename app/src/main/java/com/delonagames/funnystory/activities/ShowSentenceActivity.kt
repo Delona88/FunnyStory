@@ -11,7 +11,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.delonagames.funnystory.FunnyStoryApp
 import com.delonagames.funnystory.R
-import com.delonagames.funnystory.model.Sentence
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity.Sentence.sentence
 import com.delonagames.funnystory.activities.host.HostActivity
@@ -112,7 +111,7 @@ class ShowSentenceActivity : AppCompatActivity() {
 
     private suspend fun sendSentenceGetAndShowNewSentense() {
         withContext(Dispatchers.IO) {
-            val response = client.sendSentence(gameId, userId, sentence.toListOfStrings())
+            val response = client.setSentence(gameId, userId, sentence.toListOfStrings())
             if (response.isSuccessful) {
                 waitGameOverGetSentenceAndShow()
             } else {
@@ -129,9 +128,9 @@ class ShowSentenceActivity : AppCompatActivity() {
             var isGameOver = false
             while (!isGameOver) {
                 Log.d("checkGameOver", ".........checkGameOver")
-                val response = client.isGameOver(gameId)
+                val response = client.isGameActive(gameId)
                 if (response.isSuccessful && response.body() != null) {
-                    isGameOver = response.body()!!
+                    isGameOver = !response.body()!!
                 } else {
                     withContext(Dispatchers.Main) {
                         showToast("Игра не существует")

@@ -21,11 +21,11 @@ class TestGameClass {
     fun setUp() {
         game = Game(0).apply {
             //добваление игроков
-            addNewUserInGame(userId1)
-            addNewUserInGame(userId2)
-            addNewUserInGame(userId3)
-            addNewUserInGame(userId4)
-            addNewUserInGame(userId5)
+            addUserInGame(userId1)
+            addUserInGame(userId2)
+            addUserInGame(userId3)
+            addUserInGame(userId4)
+            addUserInGame(userId5)
 
             //начало игры
             setGameActiveTrue()
@@ -34,6 +34,7 @@ class TestGameClass {
 
     @Test
     fun testSentAndMixSentences() {
+        println("TESTSentAndMixSentences ")
         game.apply {
             //отправка предложений
             setSentenceByUserId(hostId, list0)
@@ -53,6 +54,7 @@ class TestGameClass {
 
     @Test
     fun testRemoveUser(){
+        println("TESTRemoveUser ")
         game.apply {
             //отправка предложений
             setSentenceByUserId(hostId, list0)
@@ -64,7 +66,7 @@ class TestGameClass {
             println(getInfoIsUserSentSentence())
 
             //удаление участника, который не отправил
-            removeUserIfSentenceNotSent(userId5)
+            deleteUserIfSentenceNotSent(userId5)
         }
         println(game.getNewSentenceByUserId(hostId))
         println(game.getNewSentenceByUserId(userId1))
@@ -75,6 +77,7 @@ class TestGameClass {
 
     @Test
     fun testEndGameNow(){
+        println("TESTEndGameNow ")
         game.apply {
             //отправка предложений
             setSentenceByUserId(hostId, list0)
@@ -92,6 +95,20 @@ class TestGameClass {
         println(game.getNewSentenceByUserId(userId3))
         println(game.getNewSentenceByUserId(userId4))
 
+    }
+
+    @Test
+    fun testGetInfoIsUserSentSentence(){
+        println("TESTGetInfoIsUserSentSentence ")
+        game.apply {
+            //отправка предложений
+            setSentenceByUserId(hostId, list0)
+            setSentenceByUserId(userId1, list1)
+            setSentenceByUserId(userId2, list2)
+            setSentenceByUserId(userId3, list3)
+            setSentenceByUserId(userId4, list4)
+        }
+        println("GetInfoIsUserSentSentence - ${game.getInfoIsUserSentSentence()}")
     }
 
 /*    @Test

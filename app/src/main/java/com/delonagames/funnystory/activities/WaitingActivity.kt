@@ -12,7 +12,6 @@ import com.delonagames.funnystory.FunnyStoryApp
 import com.delonagames.funnystory.R
 import com.delonagames.funnystory.activities.createsentence.CreateSentenceActivity
 import com.delonagames.funnystory.clientapi.NetworkService
-import com.delonagames.funnystory.clientapi.RetrofitInterfaceApi
 import kotlinx.coroutines.*
 import java.net.ConnectException
 import java.net.SocketTimeoutException

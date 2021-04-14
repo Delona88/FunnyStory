@@ -8,29 +8,27 @@ class Game(val hostId: Int) {
     private var usersId = ArrayList<Int>()
     private var userSentences = ConcurrentHashMap<Int, MutableList<String>>()
     private var newUserSentences = ConcurrentHashMap<Int, MutableList<String>>()
-    private var isUserSentSentence = ConcurrentHashMap<Int, Boolean>()
     private var active = false
     private var sentSentenceCounter = AtomicInteger()
 
     init {
         usersId.add(hostId)
-        println("добавлен host $hostId")
+        println("InitGame hostId - $hostId")
     }
 
     @Synchronized
-    fun addNewUserInGame(userId: Int) {
+    fun addUserInGame(userId: Int) {
         if (!usersId.contains(userId)) {
             usersId.add(userId)
         }
-        println("добавлен user $userId")
+        println("AddNewUserInGame id - $userId")
     }
 
     fun getIdAllUsers() = usersId
 
     fun setGameActiveTrue() {
         this.active = true
-        startNewGame()
-        println("usersId $usersId")
+        println("SetGameActiveTrue usersId - $usersId")
     }
 
     fun isGameActive() = active
@@ -49,10 +47,11 @@ class Game(val hostId: Int) {
     fun isUserInGame(userId: Int) = usersId.contains(userId)
 
     private fun endGame() {
-        println("endGame : usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
         mixSentence()
         active = false
-
+        sentSentenceCounter.set(0)
+        userSentences = ConcurrentHashMap()
+        println("EndGame : usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
     }
 
     private fun mixSentence() {
@@ -72,12 +71,6 @@ class Game(val hostId: Int) {
             }
             newUserSentences.set(usersId.get(sentenceNumber), sentence)
         }
-
-    }
-
-    private fun startNewGame() {
-        sentSentenceCounter.set(0)
-        userSentences = ConcurrentHashMap()
     }
 
     fun getNewSentenceByUserId(userId: Int): List<String>? = newUserSentences[userId] //?: mutableListOf()
@@ -89,35 +82,19 @@ class Game(val hostId: Int) {
     }
 
     fun getInfoIsUserSentSentence(): ConcurrentHashMap<Int, Boolean> {
-        val isUserSentSentenceHM = ConcurrentHashMap<Int, Boolean>()
-        for (userId in usersId) {
-            if (userSentences[userId] != null) {
-                isUserSentSentenceHM.put(userId, true)
-            } else {
-                isUserSentSentenceHM.put(userId, false)
-            }
-        }
-        return isUserSentSentenceHM
+        //TODO проверить
+        val isUserSentSentenceHM = usersId.associateWith { userSentences[it] != null }
+        return ConcurrentHashMap(isUserSentSentenceHM)
+
     }
 
-    fun removeUserIfSentenceNotSent(userId: Int) {
+    fun deleteUserIfSentenceNotSent(userId: Int) {
         if (userSentences[userId] == null) {
             usersId.remove(userId)
-            println("удален user $userId")
-            println("removeUserIfSentenceNotSent уделен usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
+            println("RemoveUserIfSentenceNotSent id - $userId")
         }
 
-        if (sentSentenceCounter.get() == usersId.size) {
-            endGame()
-            println("removeUserIfSentenceNotSent : usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
-        }
-    }
-
-    fun removeUser(userId: Int) {
-        usersId.remove(userId)
-        println("удален user $userId")
-        println("removeUser уделен usersId.size - ${usersId.size} sentSentenceCounter - ${sentSentenceCounter.get()}")
-
+        if (sentSentenceCounter.get() == usersId.size) endGame()
     }
 
 

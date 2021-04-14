@@ -109,16 +109,16 @@ class ShowSentenceHostActivity : AppCompatActivity() {
 
     private fun startNetworkVersion() {
         coroutineScope.launch(coroutineExceptionHandler) {
-            showProgressBar()
-            sendSentenceGetAndShowNewSentense()
-            hideProgressBar()
+            //showProgressBar()
+            sendSentenceGetAndShowNewSentence()
+            //hideProgressBar()
         }
     }
 
 
-    private suspend fun sendSentenceGetAndShowNewSentense() {
+    private suspend fun sendSentenceGetAndShowNewSentence() {
         withContext(Dispatchers.IO) {
-            val response = client.sendSentence(gameId, userId, sentence.toListOfStrings())
+            val response = client.setSentence(gameId, userId, sentence.toListOfStrings())
             if (response.isSuccessful) {
                 waitGameOverGetSentenceAndShow()
             } else {
@@ -134,11 +134,11 @@ class ShowSentenceHostActivity : AppCompatActivity() {
         withContext(Dispatchers.Default) {
             var isGameOver = false
             while (!isGameOver) {
-                getListUserNotSendSentenceAndUpdateListOrShowToast()
+
                 Log.d("checkGameOver", ".........checkGameOver")
-                val response = client.isGameOver(gameId)
+                val response = client.isGameActive(gameId)
                 if (response.isSuccessful && response.body() != null) {
-                    isGameOver = response.body()!!
+                    isGameOver = !response.body()!!
                 } else {
                     withContext(Dispatchers.Main) {
                         showToast("Игра не существует")
@@ -146,7 +146,10 @@ class ShowSentenceHostActivity : AppCompatActivity() {
                     }
                     break
                 }
-                delay(500)
+                if (!isGameOver) {
+                    getListUserNotSendSentenceAndUpdateListOrShowToast()
+                    delay(500)
+                }
             }
             if (isGameOver) {
                 getSentenceAndShow()
@@ -162,13 +165,11 @@ class ShowSentenceHostActivity : AppCompatActivity() {
         withContext(Dispatchers.IO) {
             val response = client.getInfoIsUserSentSentence(gameId)
             if (response.isSuccessful && response.body() != null) {
-                val usersNotSentSentence = response.body()!!
-                val listUsers = mutableListOf<Int>()
-                for (id in usersNotSentSentence.keys)
-                    if (usersNotSentSentence[id] == false) {
-                        listUsers.add(id)
-                    }
-                updateRecyclerView(listUsers)
+                val usersSentSentenceInfo = response.body()!!
+                val filterListUserNotSendSentence = usersSentSentenceInfo
+                    .filter { !it.value }
+                    .map { it.key }
+                updateRecyclerView(filterListUserNotSendSentence)
             } else {
                 withContext(Dispatchers.Main) {
                     showToast("Неверный запрос $response")
@@ -194,18 +195,22 @@ class ShowSentenceHostActivity : AppCompatActivity() {
     }
 
     private fun deleteUser(userId: Int) {
-        coroutineScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-            val response = client.disconnectUserIfSentenceNotSent(gameId, userId)
-            if (response.isSuccessful) {
-                getListUserNotSendSentenceAndUpdateListOrShowToast()
-            } else {
-                withContext(Dispatchers.Main) {
-                    showToast("Неверный запрос $response")
+        coroutineScope.launch(coroutineExceptionHandler) {
+            showProgressBar()
+            withContext(Dispatchers.IO) {
+                val response = client.deleteUserFromGame(gameId, userId)
+                if (response.isSuccessful) {
+                    delay(500)
+                    getListUserNotSendSentenceAndUpdateListOrShowToast()
+                } else {
+                    withContext(Dispatchers.Main) {
+                        showToast("Неверный запрос $response")
+                    }
                 }
             }
+            hideProgressBar()
         }
     }
-
 
     private suspend fun getSentenceAndShow() {
         withContext(Dispatchers.IO) {

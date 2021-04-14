@@ -1,10 +1,10 @@
-package funnystoryserver.controller
+package funnystoryserver.springbootserver.controller
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import funnystoryserver.service.Service
+import funnystoryserver.springbootserver.service.Service
 
 @RestController
 class FunnyStoryApiController(@Autowired val service: Service) {
@@ -18,7 +18,21 @@ class FunnyStoryApiController(@Autowired val service: Service) {
     fun createNewGameAddHostAndGetGameId(
         @PathVariable(name = "hostId") hostId: Int
     ): ResponseEntity<Int> {
-        return ResponseEntity(service.createNewGameAndReturnIndex(hostId), HttpStatus.OK)
+        return ResponseEntity(service.createNewGameAndReturnId(hostId), HttpStatus.OK)
+    }
+
+    @PostMapping("/games/{gameId}/users/{userId}")
+    fun addUserInGame(
+        @PathVariable(name = "gameId") gameId: Int,
+        @PathVariable(name = "userId") userId: Int
+    ): ResponseEntity<Unit> {
+        val game = service.getGameById(gameId)
+        return if (game != null && !game.isGameActive()) {
+            game.addUserInGame(userId)
+            ResponseEntity(HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
     @GetMapping("/games/{gameId}/users")
@@ -32,11 +46,12 @@ class FunnyStoryApiController(@Autowired val service: Service) {
     }
 
     @PutMapping("/games/{gameId}/active")
-    fun setGameActiveTrue(
-        @PathVariable(name = "gameId") gameId: Int
+    fun setGameActive(
+        @PathVariable(name = "gameId") gameId: Int,
+        @RequestParam(name = "active") active: Boolean
     ): ResponseEntity<Unit> {
         val game = service.getGameById(gameId)
-        return if (game != null) {
+        return if (game != null && active) {
             game.setGameActiveTrue()
             ResponseEntity(HttpStatus.OK)
         } else {
@@ -54,41 +69,15 @@ class FunnyStoryApiController(@Autowired val service: Service) {
         }
     }
 
-    @PostMapping("/games/{gameId}/users/{userId}")
-    fun connectUserToGame(
-        @PathVariable(name = "gameId") gameId: Int,
-        @PathVariable(name = "userId") userId: Int
-    ): ResponseEntity<Unit> {
-        val game = service.getGameById(gameId)
-        return if (game != null && !game.isGameActive()) {
-            service.addNewPlayerInGame(gameId, userId)
-            ResponseEntity(HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-    }
-
-
     @PutMapping("/games/{gameId}/user/{userId}/sentence")
-    fun sendSentence(
+    fun setSentence(
         @PathVariable(name = "gameId") gameId: Int, @PathVariable(name = "userId") userId: Int,
         @RequestBody sentence: List<String>
     ): ResponseEntity<Unit> {
-
         val game = service.getGameById(gameId)
         return if (game != null && game.isUserInGame(userId)) {
             game.setSentenceByUserId(userId, sentence.toMutableList())
             ResponseEntity(HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-    }
-
-    @GetMapping("/games/{gameId}/gameOver")
-    fun isGameOver(@PathVariable(name = "gameId") gameId: Int): ResponseEntity<Boolean> {
-        val game = service.getGameById(gameId)
-        return if (game != null) {
-            ResponseEntity(!game.isGameActive(), HttpStatus.OK)
         } else {
             ResponseEntity(HttpStatus.BAD_REQUEST)
         }
@@ -109,20 +98,7 @@ class FunnyStoryApiController(@Autowired val service: Service) {
         return ResponseEntity(HttpStatus.BAD_REQUEST)
     }
 
-    @PutMapping("/games/{gameId}")
-    fun endGameNow(
-        @PathVariable(name = "gameId") gameId: Int
-    ): ResponseEntity<Unit> {
-        val game = service.getGameById(gameId)
-        return if (game != null) {
-            game.endGameNow()
-            ResponseEntity(HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-    }
-
-    @GetMapping("/games/{gameId}/userSentences")
+    @GetMapping("/games/{gameId}/isUserSentSentence")
     fun getInfoIsUserSentSentence(
         @PathVariable(name = "gameId") gameId: Int
     ): ResponseEntity<Map<Int, Boolean>> {
@@ -134,28 +110,14 @@ class FunnyStoryApiController(@Autowired val service: Service) {
         }
     }
 
-    @DeleteMapping("/games/{gameId}/user/{userId}/sentence")
-    fun disconnectUserIfSentenceNotSent(
-        @PathVariable(name = "gameId") gameId: Int,
-        @PathVariable(name = "userId") userId: Int
-    ): ResponseEntity<Unit> {
-        val game = service.getGameById(gameId)
-        return if (game != null) {
-            game.removeUserIfSentenceNotSent(userId)
-            ResponseEntity(HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-    }
-
     @DeleteMapping("/games/{gameId}/user/{userId}")
-    fun disconnectUser(
+    fun deleteUserFromGame(
         @PathVariable(name = "gameId") gameId: Int,
         @PathVariable(name = "userId") userId: Int
     ): ResponseEntity<Unit> {
         val game = service.getGameById(gameId)
         return if (game != null) {
-            game.removeUser(userId)
+            game.deleteUserIfSentenceNotSent(userId)
             ResponseEntity(HttpStatus.OK)
         } else {
             ResponseEntity(HttpStatus.BAD_REQUEST)

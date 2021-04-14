@@ -128,7 +128,7 @@ class StartNewGameOrConnectActivity : AppCompatActivity() {
 
     private suspend fun connectToGame() {
         withContext(Dispatchers.IO) {
-            val response = client.connectUserToGame(gameId, userId)
+            val response = client.addUserInGame(gameId, userId)
             if (response.isSuccessful) {
                 funnyStoryApp.gameId = gameId
                 goToWaitingActivity()

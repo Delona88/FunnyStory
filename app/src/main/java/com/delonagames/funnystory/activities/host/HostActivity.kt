@@ -120,7 +120,7 @@ class HostActivity : AppCompatActivity() {
 
     private fun deleteUser(userId: Int) {
         coroutineScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-            val response = client.disconnectUser(gameId, userId)
+            val response = client.deleteUserFromGame(gameId, userId)
             if (response.isSuccessful) {
                 getAllUsersIdAndUpdateListOrShowToast()
             } else {
@@ -133,7 +133,7 @@ class HostActivity : AppCompatActivity() {
 
     private suspend fun setGameActiveTrueAndStartCreateSentenceActivity() {
         withContext(Dispatchers.IO) {
-            val response = client.setGameActiveTrue(gameId)
+            val response = client.setGameActive(gameId,true)
             if (response.isSuccessful) {
                 goToCreateSentenceActivity()
             } else {
